@@ -45,24 +45,25 @@ function playLetterSounds(letterObj) {
   const sequence = [
     { file: `audio/name/${letter}.mp3`,    tts: letterObj.name },
     { file: `audio/name/${letter}.mp3`,    tts: letterObj.name },
-    { file: `audio/phonics/${letter}.m4a`, tts: ph },
-    { file: `audio/phonics/${letter}.m4a`, tts: ph },
-    { file: `audio/phonics/${letter}.m4a`, tts: ph }
+    { file: `audio/phonics/${letter}.wav`, tts: ph },
+    { file: `audio/phonics/${letter}.wav`, tts: ph },
+    { file: `audio/phonics/${letter}.wav`, tts: ph }
   ];
   let idx = 0;
+  let currentAudio = null;
 
   function playNext() {
     if (idx >= sequence.length) return;
     const item = sequence[idx++];
-    const audio = new Audio(item.file);
-    audio.onended = () => setTimeout(playNext, 300);
-    audio.play().catch(() => {
+    currentAudio = new Audio(item.file);
+    currentAudio.onended = () => setTimeout(playNext, 500);
+    currentAudio.play().catch(() => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(item.tts);
         u.lang = 'en-US';
         u.rate = 0.75;
-        u.onend = () => setTimeout(playNext, 350);
+        u.onend = () => setTimeout(playNext, 500);
         window.speechSynthesis.speak(u);
       } else {
         setTimeout(playNext, 800);
@@ -70,6 +71,9 @@ function playLetterSounds(letterObj) {
     });
   }
 
+  // 停止前一次播放
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   playNext();
 }
 
@@ -88,7 +92,7 @@ function speakLetterName(letter) {
 // 自然發音（phonics）：播音檔，備案用 TTS 念 phonics 文字
 function speakNaturalSound(letterObj) {
   if (!window.speechSynthesis) return;
-  const audio = new Audio(`audio/phonics/${letterObj.letter.toLowerCase()}.mp3`);
+  const audio = new Audio(`audio/phonics/${letterObj.letter.toLowerCase()}.wav`);
   audio.play().catch(() => {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(letterObj.phonics);
@@ -100,7 +104,7 @@ function speakNaturalSound(letterObj) {
 
 // 自然發音（舊：播音檔後念單字，供 Level 2/3 使用）
 function speakPhonics(letterObj) {
-  const audio = new Audio(`audio/phonics/${letterObj.letter.toLowerCase()}.mp3`);
+  const audio = new Audio(`audio/phonics/${letterObj.letter.toLowerCase()}.wav`);
   audio.play().then(() => {
     audio.onended = () => {
       const u = new SpeechSynthesisUtterance(letterObj.word);
