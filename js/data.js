@@ -22,10 +22,18 @@ function loadData() {
     const raw = localStorage.getItem(DATA_KEY);
     if (!raw) return structuredClone(DEFAULT_DATA);
     const d = JSON.parse(raw);
-    // 補上舊資料缺少的 progress 欄位
-    if (!d.progress) d.progress = structuredClone(DEFAULT_PROGRESS);
+    // 補上所有缺少的欄位（Firebase 可能不會儲存 null/空陣列）
+    if (!d.points)               d.points = { total_earned: 0, total_redeemed: 0 };
+    if (d.current_goal_id === undefined) d.current_goal_id = null;
+    if (d.goal_changes_remaining === undefined) d.goal_changes_remaining = 1;
+    if (!d.goals)                d.goals = [];
+    if (!d.daily_log)            d.daily_log = {};
+    if (!d.redemption_history)   d.redemption_history = [];
+    if (!d.parent_password)      d.parent_password = '1234';
+    if (!d.progress)             d.progress = structuredClone(DEFAULT_PROGRESS);
     ['math','english','zhuyin'].forEach(s => {
-      if (!d.progress[s]) d.progress[s] = { unlocked_level: 1, stages: {} };
+      if (!d.progress[s])        d.progress[s] = { unlocked_level: 1, stages: {} };
+      if (!d.progress[s].stages) d.progress[s].stages = {};
     });
     return d;
   } catch {
