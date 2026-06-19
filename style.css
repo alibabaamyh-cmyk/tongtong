@@ -415,6 +415,7 @@ html, body {
 .choice-btn:active { transform: scale(0.95); }
 .choice-btn.correct { background: var(--mint-lt); border-color: var(--mint); }
 .choice-btn.wrong   { background: #FFE5E5; border-color: #FF8080; }
+.choice-lower { font-size: 1rem; font-weight: 600; opacity: 0.5; }
 
 /* 注音鍵盤 */
 .zhuyin-answer-display {

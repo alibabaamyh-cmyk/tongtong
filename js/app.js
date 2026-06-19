@@ -306,7 +306,7 @@ function renderQuestion(q) {
             <div class="question-sub" style="margin-top:8px">點聲音，選字母</div>
           </div>
           <div class="choices-grid">
-            ${q.choices.map(c => `<button class="choice-btn" onclick="checkAnswer('${c}')">${c}</button>`).join('')}
+            ${q.choices.map(c => `<button class="choice-btn" data-value="${c}" onclick="checkAnswer('${c}')">${c} <span class="choice-lower">${c.toLowerCase()}</span></button>`).join('')}
           </div>
         </div>`;
       setTimeout(() => playLetterSounds(lo), 400);
@@ -425,9 +425,10 @@ function checkAnswer(chosen) {
   if (q.type !== 'zhuyin' || q.level < 3) {
     document.querySelectorAll('.choice-btn').forEach(btn => {
       btn.disabled = true;
-      if (q.type === 'math' && Number(btn.textContent) === q.answer) btn.classList.add('correct');
-      else if (q.type !== 'math' && btn.textContent.trim() === q.answer) btn.classList.add('correct');
-      if (btn.textContent.trim() === String(chosen) && !isCorrect) btn.classList.add('wrong');
+      const val = btn.dataset.value ?? btn.textContent.trim();
+      if (q.type === 'math' && Number(val) === q.answer) btn.classList.add('correct');
+      else if (q.type !== 'math' && val === q.answer) btn.classList.add('correct');
+      if (val === String(chosen) && !isCorrect) btn.classList.add('wrong');
     });
   }
 
