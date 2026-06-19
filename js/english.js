@@ -38,22 +38,39 @@ function speak(text, lang = 'en-US') {
   window.speechSynthesis.speak(u);
 }
 
-// 字母發音×2 + 自然發音×3，用 onend 串接避免重疊
+// 字母發音×2 + 自然發音×3，優先用音檔，備案用 TTS
 function playLetterSounds(letterObj) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  const letter = letterObj.letter.toLowerCase();
   const ph = letterObj.phonics.split(',')[0].trim();
-  const sequence = [letterObj.name, letterObj.name, ph, ph, ph];
+  const sequence = [
+    { file: `audio/name/${letter}.mp3`,    tts: letterObj.name },
+    { file: `audio/name/${letter}.mp3`,    tts: letterObj.name },
+    { file: `audio/phonics/${letter}.m4a`, tts: ph },
+    { file: `audio/phonics/${letter}.m4a`, tts: ph },
+    { file: `audio/phonics/${letter}.m4a`, tts: ph }
+  ];
   let idx = 0;
-  function next() {
+
+  function playNext() {
     if (idx >= sequence.length) return;
-    const u = new SpeechSynthesisUtterance(sequence[idx++]);
-    u.lang = 'en-US';
-    u.rate = 0.75;
-    u.onend = () => setTimeout(next, 350);
-    window.speechSynthesis.speak(u);
+    const item = sequence[idx++];
+    const audio = new Audio(item.file);
+    audio.onended = () => setTimeout(playNext, 300);
+    audio.play().catch(() => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(item.tts);
+        u.lang = 'en-US';
+        u.rate = 0.75;
+        u.onend = () => setTimeout(playNext, 350);
+        window.speechSynthesis.speak(u);
+      } else {
+        setTimeout(playNext, 800);
+      }
+    });
   }
-  next();
+
+  playNext();
 }
 
 // 字母發音（letter name）：用 name 欄位避免 Mac 唸出 "capital"
