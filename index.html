@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>潼潼學習天地 🌟</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 頂部標題欄 -->
+  <div id="topbar">
+    <h1>🌟 潼潼學習天地</h1>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="sync-badge" class="sync-badge"></div>
+      <div class="points-badge" id="topbar-points">⭐ 0</div>
+    </div>
+  </div>
+
+  <!-- 首頁 -->
+  <div id="screen-home" class="screen active">
+    <div class="home-greeting">嗨，<span>潼潼</span>！✨</div>
+    <div class="home-sub">今天要學什麼呢？</div>
+
+    <!-- 小兔子進度條 -->
+    <div id="bunny-area"></div>
+
+    <!-- 今日積分 -->
+    <div id="today-summary"></div>
+
+    <!-- 快速進入科目 -->
+    <div class="subject-grid">
+      <button class="subject-btn math"    onclick="navigate('learn');selectSubject('math')">
+        <span class="icon">🔢</span>數學
+      </button>
+      <button class="subject-btn english" onclick="navigate('learn');selectSubject('english')">
+        <span class="icon">🔤</span>英文
+      </button>
+      <button class="subject-btn zhuyin"  onclick="navigate('learn');selectSubject('zhuyin')">
+        <span class="icon">ㄅ</span>注音
+      </button>
+    </div>
+  </div>
+
+  <!-- 學習天地 -->
+  <div id="screen-learn" class="screen">
+    <div id="learn-inner"></div>
+  </div>
+
+  <!-- 答題畫面 -->
+  <div id="screen-question" class="screen">
+    <div id="question-inner"></div>
+  </div>
+
+  <!-- 目標清單 -->
+  <div id="screen-goals" class="screen">
+    <div id="goals-inner"></div>
+  </div>
+
+  <!-- 記錄本 -->
+  <div id="screen-journal" class="screen">
+    <div id="journal-inner"></div>
+  </div>
+
+  <!-- 家長後台 -->
+  <div id="screen-parent" class="screen">
+    <div id="parent-inner"></div>
+  </div>
+
+  <!-- 底部導覽 -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" data-screen="home">
+      <span class="icon">🏠</span>首頁
+    </button>
+    <button class="nav-btn" data-screen="learn">
+      <span class="icon">📚</span>學習
+    </button>
+    <button class="nav-btn" data-screen="goals">
+      <span class="icon">🎯</span>目標
+    </button>
+    <button class="nav-btn" data-screen="journal">
+      <span class="icon">📖</span>記錄
+    </button>
+    <button class="nav-btn" data-screen="parent">
+      <span class="icon">👩‍💼</span>家長
+    </button>
+  </nav>
+
+</div>
+
+<!-- 答題回饋覆蓋層 -->
+<div id="feedback-overlay" class="feedback-overlay">
+  <div class="feedback-bubble">
+    <div class="feedback-emoji" id="feedback-emoji">🌟</div>
+    <div class="feedback-text" id="feedback-text"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-bg" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK（未填設定時不影響運作）-->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/math.js"></script>
+<script src="js/english.js"></script>
+<script src="js/zhuyin.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

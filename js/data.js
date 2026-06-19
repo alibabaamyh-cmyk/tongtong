@@ -1,0 +1,189 @@
+const DATA_KEY = 'tongtong_v1';
+
+const DEFAULT_PROGRESS = {
+  math:    { unlocked_level: 1, stages: {} },
+  english: { unlocked_level: 1, stages: {} },
+  zhuyin:  { unlocked_level: 1, stages: {} }
+};
+
+const DEFAULT_DATA = {
+  points: { total_earned: 0, total_redeemed: 0 },
+  current_goal_id: null,
+  goal_changes_remaining: 1,
+  goals: [],
+  daily_log: {},
+  redemption_history: [],
+  parent_password: '1234',
+  progress: DEFAULT_PROGRESS
+};
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(DATA_KEY);
+    if (!raw) return structuredClone(DEFAULT_DATA);
+    const d = JSON.parse(raw);
+    // 補上舊資料缺少的 progress 欄位
+    if (!d.progress) d.progress = structuredClone(DEFAULT_PROGRESS);
+    ['math','english','zhuyin'].forEach(s => {
+      if (!d.progress[s]) d.progress[s] = { unlocked_level: 1, stages: {} };
+    });
+    return d;
+  } catch {
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+
+// stages key 格式: "level-stage"，例如 "1-3"
+function getStageStatus(subject, level, stage) {
+  const d = loadData();
+  return d.progress[subject].stages[`${level}-${stage}`] || { completed: false, perfect: false };
+}
+
+function isLevelUnlocked(subject, level) {
+  return loadData().progress[subject].unlocked_level >= level;
+}
+
+function isStageUnlocked(subject, level, stage) {
+  if (!isLevelUnlocked(subject, level)) return false;
+  if (stage === 1) return true;
+  return getStageStatus(subject, level, stage - 1).completed;
+}
+
+function completeStage(subject, level, stage, isPerfect) {
+  const d = loadData();
+  const key = `${level}-${stage}`;
+  const prev = d.progress[subject].stages[key] || {};
+  d.progress[subject].stages[key] = {
+    completed: true,
+    perfect: isPerfect || prev.perfect || false
+  };
+  // 完成第10關 → 解鎖下一個 Level
+  if (stage === 10 && level < 3) {
+    const allDone = Array.from({length: 10}, (_, i) =>
+      d.progress[subject].stages[`${level}-${i+1}`]?.completed
+    ).every(Boolean);
+    if (allDone) {
+      d.progress[subject].unlocked_level = Math.max(d.progress[subject].unlocked_level, level + 1);
+    }
+  }
+  saveData(d);
+}
+
+function saveData(data) {
+  localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  if (typeof dataRef !== 'undefined' && dataRef) {
+    dataRef.set(data).catch(() => {});
+  }
+}
+
+// 從 Firebase 拉資料；Firebase 有資料時以它為準，空的話把本地推上去
+function syncFromFirebase(onDone) {
+  if (typeof dataRef === 'undefined' || !dataRef) { onDone(false); return; }
+  dataRef.once('value')
+    .then(snapshot => {
+      const remote = snapshot.val();
+      if (remote && typeof remote === 'object') {
+        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+        onDone(true);
+      } else {
+        dataRef.set(loadData()).catch(() => {});
+        onDone(false);
+      }
+    })
+    .catch(() => onDone(false));
+}
+
+function getTodayKey() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getBalance() {
+  const d = loadData();
+  return d.points.total_earned - d.points.total_redeemed;
+}
+
+function addPoints(subject, amount) {
+  const d = loadData();
+  d.points.total_earned += amount;
+  const today = getTodayKey();
+  if (!d.daily_log[today]) d.daily_log[today] = { math: 0, english: 0, zhuyin: 0 };
+  d.daily_log[today][subject] += amount;
+  saveData(d);
+  return d.points.total_earned - d.points.total_redeemed;
+}
+
+function addGoal(name, imageBase64, requiredPoints) {
+  const d = loadData();
+  const goal = { id: Date.now().toString(), name, image: imageBase64, required_points: requiredPoints, redeemed: false };
+  d.goals.push(goal);
+  saveData(d);
+  return goal.id;
+}
+
+function updateGoal(id, name, imageBase64, requiredPoints) {
+  const d = loadData();
+  const goal = d.goals.find(g => g.id === id);
+  if (!goal) return false;
+  goal.name = name;
+  if (imageBase64) goal.image = imageBase64;
+  goal.required_points = requiredPoints;
+  saveData(d);
+  return true;
+}
+
+function deleteGoal(id) {
+  const d = loadData();
+  d.goals = d.goals.filter(g => g.id !== id);
+  if (d.current_goal_id === id) {
+    d.current_goal_id = null;
+    d.goal_changes_remaining = Math.max(d.goal_changes_remaining, 1);
+  }
+  saveData(d);
+}
+
+function setCurrentGoal(goalId) {
+  const d = loadData();
+  if (d.current_goal_id === goalId) return { success: true };
+  if (d.current_goal_id !== null && d.goal_changes_remaining <= 0) {
+    return { success: false, reason: 'no_changes_left' };
+  }
+  if (d.current_goal_id !== null) d.goal_changes_remaining--;
+  d.current_goal_id = goalId;
+  saveData(d);
+  return { success: true };
+}
+
+function redeemGoal(goalId) {
+  const d = loadData();
+  const goal = d.goals.find(g => g.id === goalId);
+  if (!goal) return { success: false };
+  const balance = d.points.total_earned - d.points.total_redeemed;
+  if (balance < goal.required_points) return { success: false, reason: 'insufficient' };
+  d.points.total_redeemed += goal.required_points;
+  goal.redeemed = true;
+  if (d.current_goal_id === goalId) {
+    d.current_goal_id = null;
+    d.goal_changes_remaining = Math.max(d.goal_changes_remaining, 1);
+  }
+  d.redemption_history.push({ date: getTodayKey(), goal_name: goal.name, points_used: goal.required_points });
+  saveData(d);
+  return { success: true };
+}
+
+function verifyParentPassword(pw) {
+  return loadData().parent_password === pw;
+}
+
+function setParentPassword(pw) {
+  const d = loadData();
+  d.parent_password = pw;
+  saveData(d);
+}
+
+function getDailyLog() {
+  return loadData().daily_log;
+}
+
+function getRedemptionHistory() {
+  return loadData().redemption_history;
+}
