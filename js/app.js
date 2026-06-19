@@ -951,17 +951,16 @@ function closeModal() {
 
 // ── 音效 ──
 let audioCtx = null;
-function getAudioCtx() {
+async function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // HTTPS 環境下 AudioContext 可能是 suspended，需先 resume
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   return audioCtx;
 }
 
-function playCorrectSound() {
+async function playCorrectSound() {
   try {
-    const ctx = getAudioCtx();
-    const notes = [523, 659, 784, 1047]; // C E G C（上揚快樂音）
+    const ctx = await getAudioCtx();
+    const notes = [523, 659, 784, 1047];
     notes.forEach((freq, i) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -977,9 +976,9 @@ function playCorrectSound() {
   } catch {}
 }
 
-function playWrongSound() {
+async function playWrongSound() {
   try {
-    const ctx = getAudioCtx();
+    const ctx = await getAudioCtx();
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -994,10 +993,9 @@ function playWrongSound() {
   } catch {}
 }
 
-function playPerfectSound() {
+async function playPerfectSound() {
   try {
-    const ctx = getAudioCtx();
-    // 歡樂上升音階
+    const ctx = await getAudioCtx();
     const notes = [523,587,659,698,784,880,988,1047];
     notes.forEach((freq, i) => {
       const osc  = ctx.createOscillator();
