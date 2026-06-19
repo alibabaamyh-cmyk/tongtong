@@ -38,17 +38,31 @@ function speak(text, lang = 'en-US') {
   window.speechSynthesis.speak(u);
 }
 
-// 字母發音 + 自然發音連續播放
+// 字母發音×2 + 自然發音×3，用 onend 串接避免重疊
 function playLetterSounds(letterObj) {
-  speakLetterName(letterObj.letter);
-  setTimeout(() => speakNaturalSound(letterObj), 1300);
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const ph = letterObj.phonics.split(',')[0].trim();
+  const sequence = [letterObj.name, letterObj.name, ph, ph, ph];
+  let idx = 0;
+  function next() {
+    if (idx >= sequence.length) return;
+    const u = new SpeechSynthesisUtterance(sequence[idx++]);
+    u.lang = 'en-US';
+    u.rate = 0.75;
+    u.onend = () => setTimeout(next, 350);
+    window.speechSynthesis.speak(u);
+  }
+  next();
 }
 
-// 字母發音（letter name）：念出字母本身，如 "A" → "ay"
+// 字母發音（letter name）：用 name 欄位避免 Mac 唸出 "capital"
 function speakLetterName(letter) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(letter);
+  const lo = LETTERS.find(l => l.letter === letter);
+  const text = lo ? lo.name : letter.toLowerCase();
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
   u.rate = 0.7;
   window.speechSynthesis.speak(u);
@@ -125,7 +139,7 @@ function generateEnglishQuestion(level) {
       type: 'english',
       level: 3,
       answer: correct.letter,
-      speak_text: correct.letter,
+      speak_text: correct.name,
       choices: choices.map(c => c.letter)
     };
   }

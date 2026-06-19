@@ -296,16 +296,14 @@ function renderQuestion(q) {
       </div>`;
   } else if (q.type === 'english') {
     if (q.level === 1) {
-      // 聽發音選字母
+      // 聽發音選字母（注音風格：單一發音鍵）
       const lo = q.letter_obj;
-      const ph = lo.phonics.split(',')[0].trim();
       window.currentLetterObj = lo;
       el.innerHTML = header + `
         <div class="question-body">
-          <div class="question-display" style="cursor:pointer" onclick="playLetterSounds(currentLetterObj)">
-            <div class="phonics-display">${lo.name} / ${ph}</div>
-            <button class="speak-btn" style="margin-top:14px" onclick="event.stopPropagation();playLetterSounds(currentLetterObj)">🔊</button>
-            <div class="question-sub" style="margin-top:8px">點聲音，再選字母</div>
+          <div class="question-display">
+            <button class="speak-btn" onclick="playLetterSounds(currentLetterObj)">🔊</button>
+            <div class="question-sub" style="margin-top:8px">點聲音，選字母</div>
           </div>
           <div class="choices-grid">
             ${q.choices.map(c => `<button class="choice-btn" onclick="checkAnswer('${c}')">${c}</button>`).join('')}
