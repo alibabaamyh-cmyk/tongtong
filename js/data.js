@@ -69,28 +69,43 @@ function completeStage(subject, level, stage, isPerfect) {
   saveData(d);
 }
 
+let _isSyncing = false;  // 防止 Firebase 更新觸發自己寫回
+
 function saveData(data) {
   localStorage.setItem(DATA_KEY, JSON.stringify(data));
-  if (typeof dataRef !== 'undefined' && dataRef) {
+  if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing) {
     dataRef.set(data).catch(() => {});
   }
 }
 
-// 從 Firebase 拉資料；Firebase 有資料時以它為準，空的話把本地推上去
+// 設定即時監聽：Firebase 有變動就自動更新本機，並重新渲染畫面
 function syncFromFirebase(onDone) {
   if (typeof dataRef === 'undefined' || !dataRef) { onDone(false); return; }
-  dataRef.once('value')
-    .then(snapshot => {
-      const remote = snapshot.val();
-      if (remote && typeof remote === 'object') {
-        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+
+  let firstCall = true;
+  dataRef.on('value', snapshot => {
+    const remote = snapshot.val();
+    if (remote && typeof remote === 'object') {
+      _isSyncing = true;
+      localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+      _isSyncing = false;
+      if (firstCall) {
+        firstCall = false;
         onDone(true);
       } else {
+        // 其他裝置寫入後即時更新畫面
+        if (typeof renderHome === 'function') renderHome();
+        if (typeof refreshPoints === 'function') refreshPoints();
+        if (typeof showSyncBadge === 'function') showSyncBadge();
+      }
+    } else {
+      if (firstCall) {
+        firstCall = false;
         dataRef.set(loadData()).catch(() => {});
         onDone(false);
       }
-    })
-    .catch(() => onDone(false));
+    }
+  }, () => onDone(false));
 }
 
 function getTodayKey() {
