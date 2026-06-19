@@ -432,14 +432,16 @@ function checkAnswer(chosen) {
     });
   }
 
+  // 停掉還在進行的語音，避免和 Web Audio 衝突
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+
   if (isCorrect) {
     state.sessionCorrect++;
     state.sessionPoints++;
     addPoints(state.subject, 1);
     refreshPoints();
     playCorrectSound();
-    const feedbackMsg = '答對了！+1 分';
-    showFeedback('🌟', feedbackMsg, 'correct');
+    showFeedback('🌟', '答對了！+1 分', 'correct');
     flyPoints();
   } else {
     playWrongSound();
@@ -951,6 +953,8 @@ function closeModal() {
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // HTTPS 環境下 AudioContext 可能是 suspended，需先 resume
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
