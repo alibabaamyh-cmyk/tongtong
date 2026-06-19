@@ -315,6 +315,12 @@ html, body {
 }
 .question-emoji { font-size: 4rem; margin-bottom: 8px; }
 .question-text  { font-size: 2.2rem; font-weight: 800; color: var(--text); }
+.phonics-display {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--sky);
+  letter-spacing: 2px;
+}
 .question-sub   { font-size: 0.9rem; color: var(--text-lt); margin-top: 6px; }
 .speak-btn {
   background: var(--sky-lt);
@@ -953,6 +959,7 @@ html, body {
   .question-display { padding: 36px; }
   .question-emoji { font-size: 6rem; }
   .question-text  { font-size: 3rem; }
+  .phonics-display { font-size: 2.8rem; }
   .question-sub   { font-size: 1.05rem; }
   .speak-btn { width: 68px; height: 68px; font-size: 1.8rem; }
 

@@ -153,7 +153,7 @@ const LEVEL_INFO = {
     { icon:'🌳', title:'Level 3', desc:'百位、千位混合挑戰' }
   ],
   english: [
-    { icon:'🌱', title:'Level 1', desc:'認識字母：字母發音 ＋ 自然發音' },
+    { icon:'🌱', title:'Level 1', desc:'聽聲音，選字母' },
     { icon:'🌿', title:'Level 2', desc:'大寫配小寫' },
     { icon:'🌳', title:'Level 3', desc:'聽音選字母' }
   ],
@@ -296,32 +296,22 @@ function renderQuestion(q) {
       </div>`;
   } else if (q.type === 'english') {
     if (q.level === 1) {
-      // 字母學習卡
+      // 聽發音選字母
       const lo = q.letter_obj;
+      const ph = lo.phonics.split(',')[0].trim();
       window.currentLetterObj = lo;
       el.innerHTML = header + `
         <div class="question-body">
-          <div class="question-display" style="padding:20px 0 8px">
-            <div class="letter-learn-upper">${lo.letter}</div>
-            <div class="letter-learn-lower">${lo.letter.toLowerCase()}</div>
+          <div class="question-display" style="cursor:pointer" onclick="playLetterSounds(currentLetterObj)">
+            <div class="phonics-display">${lo.name} / ${ph}</div>
+            <button class="speak-btn" style="margin-top:14px" onclick="event.stopPropagation();playLetterSounds(currentLetterObj)">🔊</button>
+            <div class="question-sub" style="margin-top:8px">點聲音，再選字母</div>
           </div>
-          <div class="letter-sound-row">
-            <button class="letter-sound-btn sky" onclick="speakLetterName('${lo.letter}')">
-              <div class="lsb-top">${lo.letter.toLowerCase()}</div>
-              <div class="lsb-bot">字母發音</div>
-            </button>
-            <button class="letter-sound-btn pink" onclick="speakNaturalSound(currentLetterObj)">
-              <div class="lsb-top">${lo.phonics}</div>
-              <div class="lsb-bot">自然發音</div>
-            </button>
+          <div class="choices-grid">
+            ${q.choices.map(c => `<button class="choice-btn" onclick="checkAnswer('${c}')">${c}</button>`).join('')}
           </div>
-          <div class="letter-word-hint">${lo.emoji} ${lo.word}</div>
-          <button class="btn-primary" style="width:100%;font-size:1.1rem;padding:16px;margin-top:20px" onclick="checkAnswer('__learned__')">認識了！→</button>
         </div>`;
-      setTimeout(() => {
-        speakLetterName(lo.letter);
-        setTimeout(() => speakNaturalSound(lo), 1200);
-      }, 400);
+      setTimeout(() => playLetterSounds(lo), 400);
     } else if (q.level === 2) {
       el.innerHTML = header + `
         <div class="question-body">
@@ -449,7 +439,7 @@ function checkAnswer(chosen) {
     addPoints(state.subject, 1);
     refreshPoints();
     playCorrectSound();
-    const feedbackMsg = (q.type === 'english' && q.level === 1) ? '學會了！+1 分' : '答對了！+1 分';
+    const feedbackMsg = '答對了！+1 分';
     showFeedback('🌟', feedbackMsg, 'correct');
     flyPoints();
   } else {
