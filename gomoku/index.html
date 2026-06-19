@@ -9,14 +9,16 @@
     body {
       font-family: 'PingFang TC', 'Noto Sans TC', sans-serif;
       background: radial-gradient(ellipse at top, #2d5a1b, #1a3a0a);
-      min-height: 100vh;
+      height: 100dvh;
+      height: 100vh; /* fallback */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       color: #fff;
-      padding: 12px;
+      padding: 4px;
       user-select: none;
+      overflow: hidden;
     }
 
     /* ── 模式選擇 ── */
@@ -54,7 +56,7 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 5px;
       animation: fadeIn 0.3s ease;
       width: 100%;
     }
@@ -64,11 +66,11 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      max-width: 520px;
       background: rgba(0,0,0,0.35);
       backdrop-filter: blur(6px);
-      padding: 10px 16px;
-      border-radius: 14px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      flex-shrink: 0;
     }
 
     .bar-btn {
@@ -506,7 +508,9 @@ function resetState() {
 }
 
 function resize() {
-  const s = Math.min(window.innerWidth - 20, window.innerHeight - 130, 520);
+  const bar  = document.getElementById('status-bar');
+  const barH = bar ? bar.getBoundingClientRect().height + 9 : 46; // bar + gap
+  const s = Math.min(window.innerWidth - 8, window.innerHeight - barH - 8, 700);
   canvas.width = s; canvas.height = s;
   CELL   = s / (SIZE + 1);
   MARGIN = CELL;
