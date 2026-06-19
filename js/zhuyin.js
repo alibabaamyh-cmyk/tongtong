@@ -44,12 +44,15 @@ const WORDS_L3 = [
 ];
 
 function speakZhuyin(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-TW';
-  u.rate = 0.8;
-  window.speechSynthesis.speak(u);
+  const audio = new Audio(`audio/zhuyin/${encodeURIComponent(text)}.wav`);
+  audio.play().catch(() => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    u.rate = 0.8;
+    window.speechSynthesis.speak(u);
+  });
 }
 
 function pickRandFrom(arr, n) {
