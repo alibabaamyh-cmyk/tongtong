@@ -61,6 +61,17 @@ function refreshPoints() {
   document.getElementById('topbar-points').textContent = '⭐ ' + getBalance();
 }
 
+// ── 同步後更新目前可見的頁面 ──
+function refreshAllScreens() {
+  refreshPoints();
+  showSyncBadge();
+  const s = state.screen;
+  if (s === 'home')    renderHome();
+  else if (s === 'goals')   renderGoals();
+  else if (s === 'journal') renderJournal();
+  // learn/question/parent 不自動刷新（避免打斷作答）
+}
+
 // ══════════════════════════════════════════════
 // 首頁
 // ══════════════════════════════════════════════

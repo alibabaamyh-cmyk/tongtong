@@ -86,34 +86,53 @@ function saveData(data) {
   }
 }
 
+// 從 Firebase 拉最新資料並更新畫面
+function pullFromFirebase(onDone) {
+  if (typeof dataRef === 'undefined' || !dataRef) { if (onDone) onDone(false); return; }
+  dataRef.once('value')
+    .then(snapshot => {
+      const remote = snapshot.val();
+      if (remote && typeof remote === 'object') {
+        _isSyncing = true;
+        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+        _isSyncing = false;
+        if (onDone) onDone(true);
+      } else {
+        dataRef.set(loadData()).catch(() => {});
+        if (onDone) onDone(false);
+      }
+    })
+    .catch(() => { if (onDone) onDone(false); });
+}
+
 // 設定即時監聽：Firebase 有變動就自動更新本機，並重新渲染畫面
 function syncFromFirebase(onDone) {
   if (typeof dataRef === 'undefined' || !dataRef) { onDone(false); return; }
 
-  let firstCall = true;
+  // 初始拉取
+  pullFromFirebase(synced => onDone(synced));
+
+  // 即時監聽其他裝置的更新
   dataRef.on('value', snapshot => {
+    if (_isSyncing) return;
     const remote = snapshot.val();
     if (remote && typeof remote === 'object') {
       _isSyncing = true;
       localStorage.setItem(DATA_KEY, JSON.stringify(remote));
       _isSyncing = false;
-      if (firstCall) {
-        firstCall = false;
-        onDone(true);
-      } else {
-        // 其他裝置寫入後即時更新畫面
-        if (typeof renderHome === 'function') renderHome();
-        if (typeof refreshPoints === 'function') refreshPoints();
-        if (typeof showSyncBadge === 'function') showSyncBadge();
-      }
-    } else {
-      if (firstCall) {
-        firstCall = false;
-        dataRef.set(loadData()).catch(() => {});
-        onDone(false);
-      }
+      // 更新所有可見畫面
+      if (typeof refreshAllScreens === 'function') refreshAllScreens();
     }
-  }, () => onDone(false));
+  });
+
+  // 切回頁面時重新拉取（補漏網之魚）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      pullFromFirebase(synced => {
+        if (synced && typeof refreshAllScreens === 'function') refreshAllScreens();
+      });
+    }
+  });
 }
 
 function getTodayKey() {
