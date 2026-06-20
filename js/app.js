@@ -32,12 +32,27 @@ function init() {
   }
 }
 
-function showSyncBadge() {
+function showSyncBadge(text) {
   const badge = document.getElementById('sync-badge');
   if (!badge) return;
-  badge.textContent = '☁️ 已更新';
+  badge.textContent = text || '☁️ 已同步';
   badge.classList.add('show');
   setTimeout(() => badge.classList.remove('show'), 2500);
+}
+
+function manualSync() {
+  const badge = document.getElementById('sync-badge');
+  if (badge) { badge.textContent = '⏳ 同步中…'; badge.classList.add('show'); }
+  if (typeof pullFromFirebase === 'function') {
+    pullFromFirebase(synced => {
+      if (synced) {
+        refreshAllScreens();
+        showSyncBadge('☁️ 同步完成！');
+      } else {
+        showSyncBadge('❌ 同步失敗');
+      }
+    });
+  }
 }
 
 // ── 導覽 ──
