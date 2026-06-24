@@ -91,7 +91,10 @@ function saveData(data) {
   // pull 完成後才允許推送，且只有本機分數 >= Firebase 分數才推
   if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing && _pullDone) {
     if (data.points.total_earned >= _firebaseEarned) {
-      dataRef.set(data).catch(() => {});
+      // 圖片不推到 Firebase（避免資料超過 5MB，iPad localStorage 寫入失敗）
+      const remote = JSON.parse(JSON.stringify(data));
+      if (remote.goals) remote.goals = remote.goals.map(g => ({...g, image: null}));
+      dataRef.set(remote).catch(() => {});
     }
   }
 }
@@ -104,6 +107,14 @@ function pullFromFirebase(onDone) {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
         _firebaseEarned = remote.points?.total_earned || 0;
+        // 保留本機的目標圖片（Firebase 不存圖片）
+        const local = loadData();
+        if (remote.goals && local.goals) {
+          remote.goals = remote.goals.map(rg => {
+            const lg = local.goals.find(g => g.id === rg.id);
+            return lg?.image ? {...rg, image: lg.image} : rg;
+          });
+        }
         _isSyncing = true;
         try {
           localStorage.setItem(DATA_KEY, JSON.stringify(remote));
