@@ -66,7 +66,14 @@ function navigate(screen) {
   state.screen = screen;
 
   if (screen === 'home')    renderHome();
-  if (screen === 'learn')   renderLearn();
+  if (screen === 'learn') {
+    // 進學習頁前先拉最新分數，確保分數正確
+    if (typeof pullFromFirebase === 'function') {
+      pullFromFirebase(() => { refreshPoints(); renderLearn(); });
+    } else {
+      renderLearn();
+    }
+  }
   if (screen === 'goals')   renderGoals();
   if (screen === 'journal') renderJournal();
   if (screen === 'parent')  renderParent();

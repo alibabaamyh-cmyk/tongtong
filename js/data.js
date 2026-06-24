@@ -115,37 +115,9 @@ function pullFromFirebase(onDone) {
     .catch(() => { if (onDone) onDone(false); });
 }
 
-// 設定即時監聽：Firebase 有變動就自動更新本機，並重新渲染畫面
+// 頁面初始化時拉一次 Firebase
 function syncFromFirebase(onDone) {
-  if (typeof dataRef === 'undefined' || !dataRef) { onDone(false); return; }
-
-  // 初始拉取
   pullFromFirebase(synced => onDone(synced));
-
-  // 即時監聽其他裝置的更新
-  dataRef.on('value', snapshot => {
-    if (_isSyncing) return;
-    const remote = snapshot.val();
-    if (remote && typeof remote === 'object') {
-      _isSyncing = true;
-      try {
-        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
-      } catch (e) {
-        console.warn('localStorage 寫入失敗:', e);
-      }
-      _isSyncing = false;
-      if (typeof refreshAllScreens === 'function') refreshAllScreens();
-    }
-  });
-
-  // 切回頁面時重新拉取（補漏網之魚）
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      pullFromFirebase(synced => {
-        if (synced && typeof refreshAllScreens === 'function') refreshAllScreens();
-      });
-    }
-  });
 }
 
 function getTodayKey() {
