@@ -60,6 +60,17 @@ html, body {
   white-space: nowrap;
 }
 .sync-badge.show { opacity: 1; }
+#sync-btn {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 8px;
+  line-height: 1;
+  opacity: 0.85;
+}
+#sync-btn:active { opacity: 0.5; }
 #topbar .points-badge {
   background: var(--yellow);
   color: var(--text);
