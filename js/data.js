@@ -78,7 +78,8 @@ function completeStage(subject, level, stage, isPerfect) {
 }
 
 let _isSyncing = false;
-let _firebaseEarned = 0;  // 記住上次從 Firebase 拉到的 total_earned
+let _firebaseEarned = 0;   // 上次從 Firebase 拉到的 total_earned
+let _pullDone = false;      // pull 完成前禁止推送，防止空白資料蓋掉 Firebase
 
 function saveData(data) {
   data.updated_at = Date.now();
@@ -87,8 +88,8 @@ function saveData(data) {
   } catch (e) {
     console.warn('localStorage 寫入失敗:', e);
   }
-  // 只有本機分數 >= Firebase 分數時才推，防止低分蓋高分
-  if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing) {
+  // pull 完成後才允許推送，且只有本機分數 >= Firebase 分數才推
+  if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing && _pullDone) {
     if (data.points.total_earned >= _firebaseEarned) {
       dataRef.set(data).catch(() => {});
     }
@@ -110,13 +111,15 @@ function pullFromFirebase(onDone) {
           console.warn('localStorage 寫入失敗:', e);
         }
         _isSyncing = false;
+        _pullDone = true;
         if (onDone) onDone(true);
       } else {
         // Firebase 沒資料：不自動上傳，保持本機原狀
+        _pullDone = true;
         if (onDone) onDone(false);
       }
     })
-    .catch(() => { if (onDone) onDone(false); });
+    .catch(() => { _pullDone = true; if (onDone) onDone(false); });
 }
 
 // 頁面初始化時拉一次 Firebase
