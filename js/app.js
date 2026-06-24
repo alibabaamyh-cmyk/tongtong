@@ -26,7 +26,9 @@ function init() {
       if (synced) {
         renderHome();
         refreshPoints();
-        showSyncBadge();
+        showSyncBadge('☁️ 已同步 ' + getBalance() + '分');
+      } else {
+        showSyncBadge('⚠️ 未連上Firebase');
       }
     });
   }
@@ -37,7 +39,7 @@ function showSyncBadge(text) {
   if (!badge) return;
   badge.textContent = text || '☁️ 已同步';
   badge.classList.add('show');
-  setTimeout(() => badge.classList.remove('show'), 2500);
+  setTimeout(() => badge.classList.remove('show'), 5000);
 }
 
 function manualSync() {
