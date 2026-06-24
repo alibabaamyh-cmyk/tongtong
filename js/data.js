@@ -77,18 +77,21 @@ function completeStage(subject, level, stage, isPerfect) {
   saveData(d);
 }
 
-let _isSyncing = false;  // 防止 Firebase 更新觸發自己寫回
+let _isSyncing = false;
+let _firebaseEarned = 0;  // 記住上次從 Firebase 拉到的 total_earned
 
 function saveData(data) {
-  data.updated_at = Date.now();  // 每次存檔都更新時間戳
+  data.updated_at = Date.now();
   try {
     localStorage.setItem(DATA_KEY, JSON.stringify(data));
   } catch (e) {
     console.warn('localStorage 寫入失敗:', e);
   }
-  // 圖片已壓縮至 50KB 以內，直接存進 Firebase（所有裝置都能同步圖片）
+  // 只有本機分數 >= Firebase 分數時才推，防止低分蓋高分
   if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing) {
-    dataRef.set(data).catch(() => {});
+    if (data.points.total_earned >= _firebaseEarned) {
+      dataRef.set(data).catch(() => {});
+    }
   }
 }
 
@@ -99,6 +102,7 @@ function pullFromFirebase(onDone) {
     .then(snapshot => {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
+        _firebaseEarned = remote.points?.total_earned || 0;
         _isSyncing = true;
         try {
           localStorage.setItem(DATA_KEY, JSON.stringify(remote));
