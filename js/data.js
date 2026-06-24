@@ -91,10 +91,16 @@ function saveData(data) {
   // pull 完成後才允許推送，且只有本機分數 >= Firebase 分數才推
   if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing && _pullDone) {
     if (data.points.total_earned >= _firebaseEarned) {
-      // 圖片不推到 Firebase（避免資料超過 5MB，iPad localStorage 寫入失敗）
-      const remote = JSON.parse(JSON.stringify(data));
-      if (remote.goals) remote.goals = remote.goals.map(g => ({...g, image: null}));
-      dataRef.set(remote).catch(() => {});
+      // 主資料不含圖片（圖片獨立推到 tongtong/images）
+      const slim = JSON.parse(JSON.stringify(data));
+      if (slim.goals) slim.goals = slim.goals.map(g => ({...g, image: null}));
+      dataRef.set(slim).catch(() => {});
+      // 圖片推到獨立路徑
+      if (typeof imagesRef !== 'undefined' && imagesRef) {
+        const imgs = {};
+        (data.goals || []).forEach(g => { if (g.image) imgs[g.id] = g.image; });
+        imagesRef.set(imgs).catch(() => {});
+      }
     }
   }
 }
@@ -107,23 +113,28 @@ function pullFromFirebase(onDone) {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
         _firebaseEarned = remote.points?.total_earned || 0;
-        // 保留本機的目標圖片（Firebase 不存圖片）
-        const local = loadData();
-        if (remote.goals && local.goals) {
-          remote.goals = remote.goals.map(rg => {
-            const lg = local.goals.find(g => g.id === rg.id);
-            return lg?.image ? {...rg, image: lg.image} : rg;
-          });
+        // 從 tongtong/images 拉圖片，合併後再存 localStorage
+        const saveAndDone = (imgs) => {
+          if (remote.goals && imgs) {
+            remote.goals = remote.goals.map(g => ({...g, image: imgs[g.id] || g.image || null}));
+          }
+          _isSyncing = true;
+          try {
+            localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+          } catch (e) {
+            console.warn('localStorage 寫入失敗:', e);
+          }
+          _isSyncing = false;
+          _pullDone = true;
+          if (onDone) onDone(true);
+        };
+        if (typeof imagesRef !== 'undefined' && imagesRef) {
+          imagesRef.once('value')
+            .then(s => saveAndDone(s.val() || {}))
+            .catch(() => saveAndDone({}));
+        } else {
+          saveAndDone({});
         }
-        _isSyncing = true;
-        try {
-          localStorage.setItem(DATA_KEY, JSON.stringify(remote));
-        } catch (e) {
-          console.warn('localStorage 寫入失敗:', e);
-        }
-        _isSyncing = false;
-        _pullDone = true;
-        if (onDone) onDone(true);
       } else {
         // Firebase 沒資料：不自動上傳，保持本機原狀
         _pullDone = true;

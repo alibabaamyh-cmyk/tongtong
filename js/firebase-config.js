@@ -20,18 +20,18 @@ const FIREBASE_CONFIG = {
 };
 
 // ── 初始化（由 app.js 的 init() 呼叫）──
-let dataRef = null;
-let goalStorageRef = null;  // Firebase Storage，存目標圖片
+let dataRef   = null;
+let imagesRef = null;  // 圖片獨立路徑，避免主資料超過 5MB
 
 function setupFirebase() {
   if (!FIREBASE_CONFIG.apiKey) return;
   try {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    dataRef = firebase.database().ref('tongtong/data');
-    goalStorageRef = firebase.storage().ref('tongtong/goals');
+    dataRef   = firebase.database().ref('tongtong/data');
+    imagesRef = firebase.database().ref('tongtong/images');
   } catch (e) {
     console.warn('Firebase 初始化失敗:', e);
     dataRef = null;
-    goalStorageRef = null;
+    imagesRef = null;
   }
 }
