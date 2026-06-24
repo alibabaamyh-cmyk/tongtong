@@ -158,11 +158,15 @@ function addPoints(subject, amount) {
 }
 
 function addGoal(name, imageBase64, requiredPoints) {
+  return addGoalWithId(Date.now().toString(), name, imageBase64, requiredPoints);
+}
+
+function addGoalWithId(id, name, image, requiredPoints) {
   const d = loadData();
-  const goal = { id: Date.now().toString(), name, image: imageBase64, required_points: requiredPoints, redeemed: false };
+  const goal = { id, name, image, required_points: requiredPoints, redeemed: false };
   d.goals.push(goal);
   saveData(d);
-  return goal.id;
+  return id;
 }
 
 function updateGoal(id, name, imageBase64, requiredPoints) {

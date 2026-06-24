@@ -806,14 +806,36 @@ function saveGoal() {
   if (!name) { alert('請輸入目標名稱'); return; }
   if (!pts || pts < 1) { alert('請輸入正確的積分'); return; }
 
-  if (editGoalId) {
-    updateGoal(editGoalId, name, pendingImageBase64 || null, pts);
+  const goalId = editGoalId || Date.now().toString();
+
+  // 有新圖片 + Firebase Storage 可用 → 上傳後存 URL
+  if (pendingImageBase64 && typeof goalStorageRef !== 'undefined' && goalStorageRef) {
+    const imgRef = goalStorageRef.child(goalId + '.jpg');
+    imgRef.putString(pendingImageBase64, 'data_url')
+      .then(snap => snap.ref.getDownloadURL())
+      .then(url => {
+        if (editGoalId) { updateGoal(editGoalId, name, url, pts); }
+        else            { addGoalWithId(goalId, name, url, pts); }
+        pendingImageBase64 = null;
+        closeModal();
+        renderGoals();
+      })
+      .catch(() => {
+        // Storage 失敗退回存 base64
+        if (editGoalId) { updateGoal(editGoalId, name, pendingImageBase64, pts); }
+        else            { addGoalWithId(goalId, name, pendingImageBase64, pts); }
+        pendingImageBase64 = null;
+        closeModal();
+        renderGoals();
+      });
   } else {
-    addGoal(name, pendingImageBase64 || null, pts);
+    // 沒有新圖片，或 Storage 未連線
+    if (editGoalId) { updateGoal(editGoalId, name, pendingImageBase64 || null, pts); }
+    else            { addGoalWithId(goalId, name, pendingImageBase64 || null, pts); }
+    pendingImageBase64 = null;
+    closeModal();
+    renderGoals();
   }
-  pendingImageBase64 = null;
-  closeModal();
-  renderGoals();
 }
 
 function deleteGoalConfirm(goalId) {
