@@ -92,31 +92,21 @@ function saveData(data) {
   }
 }
 
-// 從 Firebase 拉最新資料並更新畫面（比較時間戳，誰新用誰）
+// 從 Firebase 拉最新資料並更新畫面（Firebase 永遠是主）
 function pullFromFirebase(onDone) {
   if (typeof dataRef === 'undefined' || !dataRef) { if (onDone) onDone(false); return; }
   dataRef.once('value')
     .then(snapshot => {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
-        const local = loadData();
-        const remoteTs = remote.updated_at || 0;
-        const localTs  = local.updated_at  || 0;
-        if (remoteTs >= localTs) {
-          // Firebase 比本機新（或一樣舊），以 Firebase 為準
-          _isSyncing = true;
-          try {
-            localStorage.setItem(DATA_KEY, JSON.stringify(remote));
-          } catch (e) {
-            console.warn('localStorage 寫入失敗:', e);
-          }
-          _isSyncing = false;
-          if (onDone) onDone(true);
-        } else {
-          // 本機比 Firebase 新，把本機推上去
-          dataRef.set(local).catch(() => {});
-          if (onDone) onDone(false);
+        _isSyncing = true;
+        try {
+          localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+        } catch (e) {
+          console.warn('localStorage 寫入失敗:', e);
         }
+        _isSyncing = false;
+        if (onDone) onDone(true);
       } else {
         // Firebase 沒資料：不自動上傳，保持本機原狀
         if (onDone) onDone(false);
