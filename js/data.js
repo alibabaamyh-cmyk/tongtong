@@ -80,25 +80,45 @@ function completeStage(subject, level, stage, isPerfect) {
 let _isSyncing = false;  // 防止 Firebase 更新觸發自己寫回
 
 function saveData(data) {
-  localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  data.updated_at = Date.now();  // 每次存檔都更新時間戳
+  try {
+    localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('localStorage 寫入失敗:', e);
+  }
+  // 圖片已壓縮至 50KB 以內，直接存進 Firebase（所有裝置都能同步圖片）
   if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing) {
     dataRef.set(data).catch(() => {});
   }
 }
 
-// 從 Firebase 拉最新資料並更新畫面
+// 從 Firebase 拉最新資料並更新畫面（比較時間戳，誰新用誰）
 function pullFromFirebase(onDone) {
   if (typeof dataRef === 'undefined' || !dataRef) { if (onDone) onDone(false); return; }
   dataRef.once('value')
     .then(snapshot => {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
-        _isSyncing = true;
-        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
-        _isSyncing = false;
-        if (onDone) onDone(true);
+        const local = loadData();
+        const remoteTs = remote.updated_at || 0;
+        const localTs  = local.updated_at  || 0;
+        if (remoteTs >= localTs) {
+          // Firebase 比本機新（或一樣舊），以 Firebase 為準
+          _isSyncing = true;
+          try {
+            localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+          } catch (e) {
+            console.warn('localStorage 寫入失敗:', e);
+          }
+          _isSyncing = false;
+          if (onDone) onDone(true);
+        } else {
+          // 本機比 Firebase 新，把本機推上去
+          dataRef.set(local).catch(() => {});
+          if (onDone) onDone(false);
+        }
       } else {
-        dataRef.set(loadData()).catch(() => {});
+        // Firebase 沒資料：不自動上傳，保持本機原狀
         if (onDone) onDone(false);
       }
     })
@@ -118,9 +138,12 @@ function syncFromFirebase(onDone) {
     const remote = snapshot.val();
     if (remote && typeof remote === 'object') {
       _isSyncing = true;
-      localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+      try {
+        localStorage.setItem(DATA_KEY, JSON.stringify(remote));
+      } catch (e) {
+        console.warn('localStorage 寫入失敗:', e);
+      }
       _isSyncing = false;
-      // 更新所有可見畫面
       if (typeof refreshAllScreens === 'function') refreshAllScreens();
     }
   });

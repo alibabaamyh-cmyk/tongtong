@@ -43,16 +43,17 @@ function showSyncBadge(text) {
 function manualSync() {
   const badge = document.getElementById('sync-badge');
   if (badge) { badge.textContent = '⏳ 同步中…'; badge.classList.add('show'); }
-  if (typeof pullFromFirebase === 'function') {
-    pullFromFirebase(synced => {
-      if (synced) {
-        refreshAllScreens();
-        showSyncBadge('☁️ 同步完成！');
-      } else {
-        showSyncBadge('❌ 同步失敗');
-      }
-    });
-  }
+  if (typeof dataRef === 'undefined' || !dataRef) { showSyncBadge('❌ 無連線'); return; }
+  // 手動同步 = 強制把本機資料推上 Firebase（本機資料視為正確）
+  const data = loadData();
+  data.updated_at = Date.now();
+  dataRef.set(data)
+    .then(() => {
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(data)); } catch(e) {}
+      refreshAllScreens();
+      showSyncBadge('☁️ 同步完成！');
+    })
+    .catch(() => showSyncBadge('❌ 同步失敗'));
 }
 
 // ── 導覽 ──
@@ -750,17 +751,44 @@ function openAddGoal(goalId = null) {
 }
 
 let pendingImageBase64 = null;
+function compressImage(file, onDone) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_PX = 300;
+      const MAX_BYTES = 50 * 1024;
+      let { width: w, height: h } = img;
+      if (w > MAX_PX || h > MAX_PX) {
+        if (w > h) { h = Math.round(h * MAX_PX / w); w = MAX_PX; }
+        else       { w = Math.round(w * MAX_PX / h); h = MAX_PX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // 從高品質開始，逐步降低直到 50KB 以內
+      let quality = 0.85;
+      let result;
+      do {
+        result = canvas.toDataURL('image/jpeg', quality);
+        quality -= 0.1;
+      } while (result.length > MAX_BYTES * 1.37 && quality > 0.1);
+      onDone(result);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function previewImage(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    pendingImageBase64 = e.target.result;
+  compressImage(file, compressed => {
+    pendingImageBase64 = compressed;
     const prev = document.getElementById('upload-preview');
-    prev.src = e.target.result;
+    prev.src = compressed;
     prev.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function saveGoal() {
