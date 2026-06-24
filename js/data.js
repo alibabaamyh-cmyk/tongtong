@@ -17,12 +17,15 @@ const DEFAULT_DATA = {
   progress: DEFAULT_PROGRESS
 };
 
+// 圖片只存記憶體，不進 localStorage（避免超過 5MB 上限）
+let _imageData = {};
+function getGoalImage(goalId) { return _imageData[goalId] || null; }
+
 function loadData() {
   try {
     const raw = localStorage.getItem(DATA_KEY);
     if (!raw) return structuredClone(DEFAULT_DATA);
     const d = JSON.parse(raw);
-    // 補上所有缺少的欄位（Firebase 可能不會儲存 null/空陣列）
     if (!d.points)               d.points = { total_earned: 0, total_redeemed: 0 };
     if (d.current_goal_id === undefined) d.current_goal_id = null;
     if (d.goal_changes_remaining === undefined) d.goal_changes_remaining = 1;
@@ -35,6 +38,14 @@ function loadData() {
       if (!d.progress[s])        d.progress[s] = { unlocked_level: 1, stages: {} };
       if (!d.progress[s].stages) d.progress[s].stages = {};
     });
+    // 舊資料若有 goal.image，搬到 _imageData 並清除 localStorage 中的圖片
+    let needsResave = false;
+    d.goals.forEach(g => {
+      if (g.image) { _imageData[g.id] = g.image; g.image = null; needsResave = true; }
+    });
+    if (needsResave) {
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(d)); } catch(e) {}
+    }
     return d;
   } catch {
     return structuredClone(DEFAULT_DATA);
@@ -91,15 +102,10 @@ function saveData(data) {
   // pull 完成後才允許推送，且只有本機分數 >= Firebase 分數才推
   if (typeof dataRef !== 'undefined' && dataRef && !_isSyncing && _pullDone) {
     if (data.points.total_earned >= _firebaseEarned) {
-      // 主資料不含圖片（圖片獨立推到 tongtong/images）
-      const slim = JSON.parse(JSON.stringify(data));
-      if (slim.goals) slim.goals = slim.goals.map(g => ({...g, image: null}));
-      dataRef.set(slim).catch(() => {});
-      // 圖片推到獨立路徑
-      if (typeof imagesRef !== 'undefined' && imagesRef) {
-        const imgs = {};
-        (data.goals || []).forEach(g => { if (g.image) imgs[g.id] = g.image; });
-        imagesRef.set(imgs).catch(() => {});
+      dataRef.set(data).catch(() => {});  // data 本身已無圖片
+      // 圖片從記憶體推到 tongtong/images
+      if (typeof imagesRef !== 'undefined' && imagesRef && Object.keys(_imageData).length > 0) {
+        imagesRef.set(_imageData).catch(() => {});
       }
     }
   }
@@ -113,11 +119,11 @@ function pullFromFirebase(onDone) {
       const remote = snapshot.val();
       if (remote && typeof remote === 'object') {
         _firebaseEarned = remote.points?.total_earned || 0;
-        // 從 tongtong/images 拉圖片，合併後再存 localStorage
+        // 圖片拉到記憶體，主資料（無圖片）存 localStorage
         const saveAndDone = (imgs) => {
-          if (remote.goals && imgs) {
-            remote.goals = remote.goals.map(g => ({...g, image: imgs[g.id] || g.image || null}));
-          }
+          if (imgs) Object.assign(_imageData, imgs);  // 圖片進記憶體
+          // 確保 goals 裡沒有圖片資料再存 localStorage
+          if (remote.goals) remote.goals = remote.goals.map(g => ({...g, image: null}));
           _isSyncing = true;
           try {
             localStorage.setItem(DATA_KEY, JSON.stringify(remote));
@@ -173,25 +179,28 @@ function addGoal(name, imageBase64, requiredPoints) {
 }
 
 function addGoalWithId(id, name, image, requiredPoints) {
+  if (image) _imageData[id] = image;  // 圖片進記憶體
   const d = loadData();
-  const goal = { id, name, image, required_points: requiredPoints, redeemed: false };
+  const goal = { id, name, image: null, required_points: requiredPoints, redeemed: false };
   d.goals.push(goal);
   saveData(d);
   return id;
 }
 
 function updateGoal(id, name, imageBase64, requiredPoints) {
+  if (imageBase64) _imageData[id] = imageBase64;  // 圖片進記憶體
   const d = loadData();
   const goal = d.goals.find(g => g.id === id);
   if (!goal) return false;
   goal.name = name;
-  if (imageBase64) goal.image = imageBase64;
+  goal.image = null;  // localStorage 不存圖片
   goal.required_points = requiredPoints;
   saveData(d);
   return true;
 }
 
 function deleteGoal(id) {
+  delete _imageData[id];  // 記憶體也清掉
   const d = loadData();
   d.goals = d.goals.filter(g => g.id !== id);
   if (d.current_goal_id === id) {

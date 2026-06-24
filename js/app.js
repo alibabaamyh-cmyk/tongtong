@@ -111,8 +111,8 @@ function renderHome() {
     const goal = d.goals.find(g => g.id === d.current_goal_id);
     if (goal) {
       const pct = Math.min(100, Math.round(balance / goal.required_points * 100));
-      const imgHtml = goal.image
-        ? `<img src="${goal.image}" class="bunny-goal-img">` : '🎯';
+      const imgHtml = getGoalImage(goal.id)
+        ? `<img src="${getGoalImage(goal.id)}" class="bunny-goal-img">` : '🎯';
       bunnyEl.innerHTML = `
         <div class="bunny-card">
           <h3>🐰 潼潼的目標</h3>
@@ -614,8 +614,8 @@ function renderGoals() {
       const pct = Math.min(100, Math.round(balance / g.required_points * 100));
       const isCurrent = d.current_goal_id === g.id;
       const canRedeem = balance >= g.required_points && !g.redeemed;
-      const imgHtml = g.image
-        ? `<img src="${g.image}" class="goal-img">`
+      const imgHtml = getGoalImage(g.id)
+        ? `<img src="${getGoalImage(g.id)}" class="goal-img">`
         : `<div class="goal-img-placeholder">🎁</div>`;
       return `<div class="goal-card${isCurrent ? ' current' : ''}${g.redeemed ? ' redeemed' : ''}" onclick="goalCardClick('${g.id}')">
         ${isCurrent ? `<div class="goal-badge">🐰</div>` : ''}
@@ -672,7 +672,7 @@ function goalCardClick(goalId) {
 
   showModal(`
     <div style="text-align:center;padding:8px">
-      <div style="font-size:2.5rem;margin-bottom:8px">${goal.image ? `<img src="${goal.image}" style="width:80px;height:80px;object-fit:cover;border-radius:14px">` : '🎯'}</div>
+      <div style="font-size:2.5rem;margin-bottom:8px">${getGoalImage(goal.id) ? `<img src="${getGoalImage(goal.id)}" style="width:80px;height:80px;object-fit:cover;border-radius:14px">` : '🎯'}</div>
       <h3 style="color:var(--pink);margin-bottom:6px">${escHtml(goal.name)}</h3>
       <p style="color:var(--text-lt);margin-bottom:12px">需要 ${goal.required_points} 分</p>
       ${warning}
@@ -720,7 +720,7 @@ function showGoalDetail(goal, d) {
   const pct = Math.min(100, Math.round(balance / goal.required_points * 100));
   showModal(`
     <div style="text-align:center;padding:8px">
-      ${goal.image ? `<img src="${goal.image}" style="width:100px;height:100px;object-fit:cover;border-radius:16px;margin-bottom:10px">` : '<div style="font-size:4rem;margin-bottom:10px">🎯</div>'}
+      ${getGoalImage(goal.id) ? `<img src="${getGoalImage(goal.id)}" style="width:100px;height:100px;object-fit:cover;border-radius:16px;margin-bottom:10px">` : '<div style="font-size:4rem;margin-bottom:10px">🎯</div>'}
       <h3 style="color:var(--pink);margin-bottom:8px">${escHtml(goal.name)}</h3>
       <div style="font-size:1.8rem;font-weight:800;color:var(--purple);margin-bottom:4px">${balance} / ${goal.required_points}</div>
       <div style="color:var(--text-lt);margin-bottom:16px">${pct}% 完成</div>
@@ -750,7 +750,7 @@ function openAddGoal(goalId = null) {
       <div class="upload-area" onclick="document.getElementById('goal-img-file').click()">
         <div style="font-size:2rem">📷</div>
         <div style="font-size:0.85rem;color:var(--text-lt);margin-top:4px">點擊上傳圖片</div>
-        ${goal && goal.image ? `<img src="${goal.image}" class="upload-preview" id="upload-preview">` : '<img id="upload-preview" style="display:none">'}
+        ${goal && getGoalImage(goal.id) ? `<img src="${getGoalImage(goal.id)}" class="upload-preview" id="upload-preview">` : '<img id="upload-preview" style="display:none">'}
       </div>
       <input type="file" id="goal-img-file" accept="image/*" style="display:none" onchange="previewImage(this)">
     </div>
@@ -963,7 +963,7 @@ function renderParentAdmin() {
         ? `<div style="color:var(--text-lt);font-size:0.9rem">還沒有目標</div>`
         : d.goals.map(g => `
           <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
-            ${g.image ? `<img src="${g.image}" style="width:46px;height:46px;object-fit:cover;border-radius:10px">` : '<span style="font-size:2rem">🎁</span>'}
+            ${getGoalImage(g.id) ? `<img src="${getGoalImage(g.id)}" style="width:46px;height:46px;object-fit:cover;border-radius:10px">` : '<span style="font-size:2rem">🎁</span>'}
             <div style="flex:1">
               <div style="font-weight:700">${escHtml(g.name)}</div>
               <div style="font-size:0.8rem;color:var(--text-lt)">${g.required_points} 分${g.redeemed ? ' · ✅ 已兌換' : ''}</div>
