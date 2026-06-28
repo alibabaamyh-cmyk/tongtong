@@ -120,7 +120,7 @@ function renderHome() {
           <div class="bunny-track">
             <div class="bunny-grass"></div>
             <div class="bunny-home">🏠</div>
-            <div class="bunny-icon" id="bunny-rabbit" style="left:${Math.max(4, pct * 0.82)}%">🐰</div>
+            <div class="bunny-icon" id="bunny-rabbit" style="${pct >= 100 ? 'right:calc(2rem + 16px);left:auto' : `left:${Math.max(4, pct * 0.86)}%`}">🐰</div>
           </div>
           <div class="bunny-progress-text">
             <span>目前 <strong>${balance}</strong> 分</span>
