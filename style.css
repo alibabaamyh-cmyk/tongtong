@@ -141,6 +141,16 @@ html, body {
   padding: 18px;
   margin-bottom: 14px;
   box-shadow: var(--shadow);
+  transition: box-shadow 0.4s, border 0.4s;
+}
+.bunny-card.reached {
+  border: 2px solid #ff7eb3;
+  box-shadow: 0 0 0 4px rgba(255,126,179,0.18), var(--shadow);
+  animation: cardPulse 2s ease-in-out infinite;
+}
+@keyframes cardPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255,126,179,0.18), var(--shadow); }
+  50%       { box-shadow: 0 0 0 8px rgba(255,126,179,0.10), var(--shadow); }
 }
 .bunny-card h3 { font-size: 0.85rem; color: var(--text-lt); margin-bottom: 8px; }
 .bunny-goal-name { font-size: 1rem; font-weight: 700; color: var(--purple); margin-bottom: 12px; }
@@ -151,6 +161,10 @@ html, body {
   border-radius: 32px;
   overflow: hidden;
   border: 2px solid var(--mint-lt);
+}
+.bunny-track.reached {
+  background: linear-gradient(to right, #ffe0ef, #ffd6f5);
+  border-color: #ffb3d9;
 }
 .bunny-grass {
   position: absolute;
@@ -185,6 +199,29 @@ html, body {
   color: var(--text-lt);
 }
 .bunny-progress-text strong { color: var(--purple); }
+.bunny-hearts {
+  position: absolute;
+  right: 12%;
+  bottom: 20px;
+  z-index: 5;
+  pointer-events: none;
+}
+.bunny-hearts span {
+  position: absolute;
+  font-size: 1rem;
+  animation: floatHeart 2s ease-out infinite;
+  opacity: 0;
+}
+.bunny-hearts span:nth-child(1) { left: 0px;   animation-delay: 0s;    font-size: 1rem; }
+.bunny-hearts span:nth-child(2) { left: 18px;  animation-delay: 0.4s;  font-size: 0.75rem; }
+.bunny-hearts span:nth-child(3) { left: -12px; animation-delay: 0.8s;  font-size: 0.7rem; }
+.bunny-hearts span:nth-child(4) { left: 8px;   animation-delay: 1.2s;  font-size: 0.9rem; }
+.bunny-hearts span:nth-child(5) { left: -6px;  animation-delay: 1.6s;  font-size: 0.8rem; }
+@keyframes floatHeart {
+  0%   { transform: translateY(0)     scale(1);   opacity: 1; }
+  80%  { transform: translateY(-36px) scale(0.7); opacity: 0.6; }
+  100% { transform: translateY(-48px) scale(0.4); opacity: 0; }
+}
 .bunny-no-goal {
   text-align: center;
   padding: 16px;

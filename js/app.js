@@ -113,21 +113,23 @@ function renderHome() {
       const pct = Math.min(100, Math.round(balance / goal.required_points * 100));
       const imgHtml = getGoalImage(goal.id)
         ? `<img src="${getGoalImage(goal.id)}" class="bunny-goal-img">` : '🎯';
+      const reached = pct >= 100;
       bunnyEl.innerHTML = `
-        <div class="bunny-card">
+        <div class="bunny-card${reached ? ' reached' : ''}">
           <h3>🐰 潼潼的目標</h3>
           <div class="bunny-goal-name">${imgHtml}${escHtml(goal.name)}</div>
-          <div class="bunny-track">
+          <div class="bunny-track${reached ? ' reached' : ''}">
             <div class="bunny-grass"></div>
             <div class="bunny-home">🏠</div>
-            <div class="bunny-icon" id="bunny-rabbit" style="${pct >= 100 ? 'right:calc(2rem + 16px);left:auto' : `left:${Math.max(4, pct * 0.86)}%`}">🐰</div>
+            <div class="bunny-icon" id="bunny-rabbit" style="${reached ? 'right:calc(2rem + 16px);left:auto' : `left:${Math.max(4, pct * 0.86)}%`}">🐰</div>
+            ${reached ? `<div class="bunny-hearts"><span>❤️</span><span>💕</span><span>❤️</span><span>💖</span><span>❤️</span></div>` : ''}
           </div>
           <div class="bunny-progress-text">
             <span>目前 <strong>${balance}</strong> 分</span>
-            <span>${pct}%</span>
+            <span>${reached ? '🎉 達標！' : pct + '%'}</span>
             <span>目標 <strong>${goal.required_points}</strong> 分</span>
           </div>
-          ${balance >= goal.required_points
+          ${reached
             ? `<button class="btn-primary" style="width:100%;margin-top:12px" onclick="quickRedeem('${goal.id}')">🎉 可以兌換了！</button>`
             : ''}
         </div>`;
