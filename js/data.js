@@ -21,6 +21,12 @@ const DEFAULT_DATA = {
 let _imageData = {};
 function getGoalImage(goalId) { return _imageData[goalId] || null; }
 
+function pushImageToFirebase(goalId) {
+  if (typeof imagesRef !== 'undefined' && imagesRef && _imageData[goalId]) {
+    imagesRef.child(goalId).set(_imageData[goalId]).catch(() => {});
+  }
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem(DATA_KEY);
@@ -179,7 +185,7 @@ function addGoal(name, imageBase64, requiredPoints) {
 }
 
 function addGoalWithId(id, name, image, requiredPoints) {
-  if (image) _imageData[id] = image;  // 圖片進記憶體
+  if (image) { _imageData[id] = image; pushImageToFirebase(id); }
   const d = loadData();
   const goal = { id, name, image: null, required_points: requiredPoints, redeemed: false };
   d.goals.push(goal);
@@ -188,7 +194,7 @@ function addGoalWithId(id, name, image, requiredPoints) {
 }
 
 function updateGoal(id, name, imageBase64, requiredPoints) {
-  if (imageBase64) _imageData[id] = imageBase64;  // 圖片進記憶體
+  if (imageBase64) { _imageData[id] = imageBase64; pushImageToFirebase(id); }
   const d = loadData();
   const goal = d.goals.find(g => g.id === id);
   if (!goal) return false;
